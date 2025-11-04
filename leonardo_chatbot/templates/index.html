@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leonardo da Vinci Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Leonardo da Vinci</h1>
+            <p class="subtitle">Artist • Inventor • Scientist • Polymath</p>
+            <p class="info">Powered by RAG - Based on historical documents and writings</p>
+        </header>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <strong>Leonardo:</strong> Salve! I am Leonardo da Vinci. You find me amidst my studies of nature's intricate designs and the harmonious principles that govern our world. What curiosity brings you to my workshop today? As I often remark, "Learning never exhausts the mind."
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <input type="text" id="userInput" placeholder="Ask Leonardo about art, science, inventions, or philosophy..." autocomplete="off">
+                <button id="sendButton">Send</button>
+            </div>
+            
+            <div class="suggestions">
+                <p>Try asking about:</p>
+                <div class="suggestion-buttons">
+                    <button class="suggestion-btn" data-question="Tell me about your paintings">Your Paintings</button>
+                    <button class="suggestion-btn" data-question="What inventions are you working on?">Your Inventions</button>
+                    <button class="suggestion-btn" data-question="How do you see the connection between art and science?">Art & Science</button>
+                    <button class="suggestion-btn" data-question="What are you studying in your notebooks?">Your Notebooks</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Conversing with the spirit of Leonardo da Vinci • Powered by historical documents and AI</p>
+        </footer>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+
+        function addMessage(message, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.innerHTML = isUser ? 
+                `<strong>You:</strong> ${message}` : 
+                `<strong>Leonardo:</strong> ${message}`;
+            
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, true);
+            userInput.value = '';
+            sendButton.disabled = true;
+            userInput.disabled = true;
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                const data = await response.json();
+                
+                if (data.response) {
+                    addMessage(data.response);
+                } else if (data.error) {
+                    addMessage(`My apologies, but there seems to be a disturbance in the flow of ideas: ${data.error}`);
+                } else {
+                    addMessage('My thoughts are like scattered leaves in the wind... please try again.');
+                }
+            } catch (error) {
+                addMessage('There appears to be a disturbance in our connection. Even the finest instruments sometimes falter.');
+            }
+
+            sendButton.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Suggestion buttons
+        suggestionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                userInput.value = button.getAttribute('data-question');
+                sendMessage();
+            });
+        });
+
+        // Focus input on load
+        userInput.focus();
+    </script>
+</body>
+</html>
